@@ -1,5 +1,9 @@
 # M5StickC Plus2 BLE Remote
 
+<p align="center">
+  <img src="assets/demo.svg" alt="M5StickC Plus2 BLE Remote — the 5 pages" width="440">
+</p>
+
 A little Bluetooth remote for your PC, running on an M5StickC Plus2. It pairs as a
 standard BLE keyboard (no dongle, no driver) and gives you media keys, volume, a
 mic-mute button for calls, presentation controls and a few Windows shortcuts,
