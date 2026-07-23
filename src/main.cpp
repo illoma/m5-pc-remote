@@ -1,14 +1,3 @@
-// ============================================================================
-//  M5 PC Remote — M5StickC Plus2
-//  ---------------------------------------------------------------------------
-//  Télécommande Bluetooth (HID clavier + touches multimédia) pour PC.
-//  S'appaire comme un clavier BLE : aucun dongle, aucun driver.
-//
-//  Bouton POWER (côté) : change de page
-//  Boutons A / B (clic + maintien) : actions de la page courante
-//  Secousse : coupe/réactive le micro (page APPEL)
-// ============================================================================
-
 #include <M5Unified.h>
 #include <BleKeyboard.h>
 #include <math.h>
@@ -28,7 +17,7 @@ static uint32_t volRepeat    = 0;
 static uint16_t colAccent, colGreen, colRed, colBar, colDim, colHead;
 
 static void initColors() {
-  colAccent = canvas.color565(155,  89, 182);  // violet
+  colAccent = canvas.color565(155,  89, 182);
   colGreen  = canvas.color565( 46, 204, 113);
   colRed    = canvas.color565(231,  76,  60);
   colBar    = canvas.color565( 28,  28,  32);
@@ -36,9 +25,6 @@ static void initColors() {
   colHead   = canvas.color565( 44,  62,  80);
 }
 
-// ---------------------------------------------------------------------------
-//  Envoi de touches (rien n'est envoyé si le PC n'est pas connecté)
-// ---------------------------------------------------------------------------
 static inline bool connected() { return bleKeyboard.isConnected(); }
 
 #define MEDIA(k)  do { if (connected()) bleKeyboard.write(k); } while (0)
@@ -47,7 +33,6 @@ static void tapKey(uint8_t k) {
   if (connected()) bleKeyboard.write(k);
 }
 
-// combo : jusqu'à 2 modificateurs + 1 touche (mettre mod2 = 0 si inutile)
 static void combo(uint8_t mod1, uint8_t mod2, uint8_t key) {
   if (!connected()) return;
   if (mod1) bleKeyboard.press(mod1);
@@ -57,28 +42,27 @@ static void combo(uint8_t mod1, uint8_t mod2, uint8_t key) {
   bleKeyboard.releaseAll();
 }
 
-// ---- Raccourcis de visio, selon CALL_APP -----------------------------------
 static void muteMic() {
 #if   CALL_APP == 1
-  combo(KEY_LEFT_CTRL, KEY_LEFT_SHIFT, 'm');   // Discord
+  combo(KEY_LEFT_CTRL, KEY_LEFT_SHIFT, 'm');
 #elif CALL_APP == 2
-  combo(KEY_LEFT_CTRL, KEY_LEFT_SHIFT, 'm');   // Teams
+  combo(KEY_LEFT_CTRL, KEY_LEFT_SHIFT, 'm');
 #elif CALL_APP == 3
-  combo(KEY_LEFT_CTRL, 0, 'd');                // Google Meet
+  combo(KEY_LEFT_CTRL, 0, 'd');
 #elif CALL_APP == 4
-  combo(KEY_LEFT_ALT, 0, 'a');                 // Zoom
+  combo(KEY_LEFT_ALT, 0, 'a');
 #endif
 }
 
 static void callSecondary() {
 #if   CALL_APP == 1
-  combo(KEY_LEFT_CTRL, KEY_LEFT_SHIFT, 'd');   // Discord : deafen
+  combo(KEY_LEFT_CTRL, KEY_LEFT_SHIFT, 'd');
 #elif CALL_APP == 2
-  combo(KEY_LEFT_CTRL, KEY_LEFT_SHIFT, 'o');   // Teams : caméra
+  combo(KEY_LEFT_CTRL, KEY_LEFT_SHIFT, 'o');
 #elif CALL_APP == 3
-  combo(KEY_LEFT_CTRL, 0, 'e');                // Meet : caméra
+  combo(KEY_LEFT_CTRL, 0, 'e');
 #elif CALL_APP == 4
-  combo(KEY_LEFT_ALT, 0, 'v');                 // Zoom : caméra
+  combo(KEY_LEFT_ALT, 0, 'v');
 #endif
 }
 
@@ -96,9 +80,6 @@ static void callSecondary() {
   #define CALL_B    "Camera"
 #endif
 
-// ---------------------------------------------------------------------------
-//  Boutons
-// ---------------------------------------------------------------------------
 static void beep(int f) { M5.Speaker.tone(f, 60); }
 
 static void nextPage() {
@@ -110,20 +91,17 @@ static void handleButtons() {
   bool aP = M5.BtnA.isPressed();
   bool bP = M5.BtnB.isPressed();
 
-  // --- Changer de page : A + B pressés ensemble ---
   if (aP && bP) {
     if (!comboActive) { comboActive = true; nextPage(); }
-    return;                       // on ne déclenche pas les actions pendant le combo
+    return;
   }
-  if (comboActive) {              // attendre le relâchement des 2 boutons
+  if (comboActive) {
     if (!aP && !bP) comboActive = false;
     return;
   }
 
-  // Bonus : bouton power (marche sur certaines unités seulement)
   if (M5.BtnPWR.wasClicked()) nextPage();
 
-  // Page VOLUME : maintien = répétition continue
   if (page == PG_VOLUME) {
     if (M5.BtnA.isPressed() && millis() - volRepeat > 140) {
       MEDIA(KEY_MEDIA_VOLUME_UP);   volRepeat = millis();
@@ -154,10 +132,10 @@ static void handleButtons() {
       if (bH) tapKey(KEY_ESC);
       break;
     case PG_MACRO:
-      if (aC) combo(KEY_LEFT_GUI, KEY_LEFT_SHIFT, 's');  // capture écran
-      if (aH) combo(KEY_LEFT_GUI, 0, 'd');               // bureau
-      if (bC) combo(KEY_LEFT_GUI, 0, 'l');               // verrouiller
-      if (bH) combo(KEY_LEFT_GUI, 0, 'e');               // explorateur
+      if (aC) combo(KEY_LEFT_GUI, KEY_LEFT_SHIFT, 's');
+      if (aH) combo(KEY_LEFT_GUI, 0, 'd');
+      if (bC) combo(KEY_LEFT_GUI, 0, 'l');
+      if (bH) combo(KEY_LEFT_GUI, 0, 'e');
       break;
   }
 }
@@ -176,9 +154,6 @@ static void checkShake() {
 #endif
 }
 
-// ---------------------------------------------------------------------------
-//  Rendu
-// ---------------------------------------------------------------------------
 static const char* pageName(int p) {
   switch (p) {
     case PG_MEDIA:   return "MEDIA";
@@ -204,7 +179,6 @@ static void render() {
   bool con = connected();
   canvas.fillSprite(TFT_BLACK);
 
-  // ---- En-tête : nom de la page ----
   canvas.fillRect(0, 0, W, 30, con ? colAccent : colHead);
   canvas.setTextColor(TFT_WHITE);
   canvas.setTextDatum(MC_DATUM);
@@ -216,7 +190,6 @@ static void render() {
   snprintf(idx, sizeof(idx), "%d/%d", page + 1, PG_COUNT);
   canvas.drawString(idx, W - 3, 3);
 
-  // ---- Légende des boutons ----
   int y0 = 42, dy = 24;
   switch (page) {
     case PG_MEDIA:
@@ -253,7 +226,6 @@ static void render() {
       break;
   }
 
-  // ---- Pied : statut BLE + batterie + rappel PWR ----
   canvas.fillRect(0, H - 12, W, 12, colBar);
   canvas.setTextDatum(ML_DATUM);
   canvas.setTextColor(con ? colGreen : colRed);
@@ -273,9 +245,6 @@ static void render() {
   canvas.pushSprite(0, 0);
 }
 
-// ---------------------------------------------------------------------------
-//  Setup / Loop
-// ---------------------------------------------------------------------------
 void setup() {
   auto cfg = M5.config();
   M5.begin(cfg);
